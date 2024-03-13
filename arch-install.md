@@ -1,4 +1,3 @@
-
 # 1. Prepare the drives
 
 Use `# lsblk` to check drive partitions. Use `# gdisk` to "zap" the drives before use, erasing the data in the process.
@@ -10,8 +9,7 @@ Use `# lsblk` to check drive partitions. Use `# gdisk` to "zap" the drives befor
 ```
 | Type | Hex code | Name | Size | Mount point |
 | --- | --- | --- | --- | --- |
-| EFI system partition | EF00 | efi | 512MiB | /mnt/efi |
-| XBOOTLDR partition | EA00 | boot | 1GiB | /mnt/boot |
+| EFI system partition | EF00 | efi | 1GiB | /mnt/efi |
 | Linux swap | 8200 | swap | (RAM size) | [SWAP] |
 | Linux filesystem | 8300 | root | 32GiB | /mnt |
 | Linux filesystem | 8300 | home | Rest of the drive | /mnt/home |
@@ -22,7 +20,6 @@ Format the partitions created in the previous step with `# mkfs`.
 
 ```
 # mkfs.fat -F32 /dev/*efi_partition*
-# mkfs.fat -F32 /dev/*boot_partition*
 # mkfs.ext4 /dev/*root_partition*
 # mkfs.ext4 /dev/*home_partition*
 # mkswap /dev/*swap_partition*
@@ -34,8 +31,7 @@ Mount the formatted partitions with `# mount`.
 
 ```
 # mount /dev/*root_partition* /mnt
-# mount /dev/*efi_partition* /mnt/efi --mkdir
-# mount /dev/*boot_partition* /mnt/boot --mkdir
+# mount /dev/*efi_partition* /mnt/boot --mkdir
 # mount /dev/*home_partition* /mnt/home --mkdir
 # swapon /dev/*swap_partition*
 ```
@@ -100,7 +96,7 @@ Change root into the new system:
 
 Install some essential packages with pacman:
 ```
-# pacman -S bashtop git neofetch neovim pacman-contrib openssh zsh
+# pacman -S bashtop git neofetch neovim pacman-contrib openssh tree zsh
 ```
 
 Edit the `/etc/pacman.conf` file and uncomment or add the following lines:
@@ -246,13 +242,17 @@ Finally, restart the machine by typing `reboot`. Remember to remove the installa
 
 This step is optional. It is however reccomended to install the proper drivers for your graphics card.
 
-## 5.1. Intel driver
+## 5.1. AMD driver
 
 Install the following packages:
 * mesa
 * lib32-mesa
-* vulkan-intel
-* lib32-vulkan-intel
+* vulkan-radeon
+* lib32-vulkan-radeon
+* libva-mesa-driver
+* lib32-libva-mesa-driver
+* mesa-vdpau
+* lib32-mesa-vdpau
 
 ## 5.2. NVIDIA driver
 
@@ -316,13 +316,21 @@ When=PostTransaction
 Exec=/usr/bin/mkinitcpio -P
 ```
 
+## 5.3. Intel driver
+
+Install the following packages:
+* mesa
+* lib32-mesa
+* vulkan-intel
+* lib32-vulkan-intel
+
 # 6. Graphical User Interface
 
 ## 6.1. Display server and manager
 
 Install the `xorg-server` and `xorg-apps` packages:
 ```
-$ sudo pacman -S xorg-server xorg-apps
+$ sudo pacman -S xorg-server xorg-xinit xorg-xrandr
 ```
 
 Install the `sddm` package:
@@ -334,7 +342,7 @@ Enable the `sddm` systemd service:
 $ sudo systemctl enable sddm
 ```
 
-## 6.3. Desktop environment
+## 6.3. Desktop environment or window manager
 
 Choose whether you want a desktop environment or tiling window manager.
 
@@ -365,5 +373,6 @@ Installation:
 $ git clone https://aur.archlinux.org/yay.git
 $ cd yay
 $ makepkg -si
+$ cd ..
 $ rm yay
 ```
