@@ -9,9 +9,9 @@ Use `# lsblk` to check drive partitions. Use `# gdisk` to "zap" the drives befor
 ```
 | Type | Hex code | Name | Size | Mount point |
 | --- | --- | --- | --- | --- |
-| EFI system partition | EF00 | efi | 1GiB | /mnt/efi |
+| EFI system partition | EF00 | esp | 1GiB | /mnt/boot |
 | Linux swap | 8200 | swap | (RAM size) | [SWAP] |
-| Linux filesystem | 8300 | root | 32GiB | /mnt |
+| Linux filesystem | 8300 | root | 48GiB | /mnt |
 | Linux filesystem | 8300 | home | Rest of the drive | /mnt/home |
 
 ## 1.2. Format the partitions
@@ -19,7 +19,7 @@ Use `# lsblk` to check drive partitions. Use `# gdisk` to "zap" the drives befor
 Format the partitions created in the previous step with `# mkfs`.
 
 ```
-# mkfs.fat -F32 /dev/*efi_partition*
+# mkfs.fat -F32 /dev/*esp_partition*
 # mkfs.ext4 /dev/*root_partition*
 # mkfs.ext4 /dev/*home_partition*
 # mkswap /dev/*swap_partition*
@@ -31,7 +31,7 @@ Mount the formatted partitions with `# mount`.
 
 ```
 # mount /dev/*root_partition* /mnt
-# mount /dev/*efi_partition* /mnt/boot --mkdir
+# mount /dev/*esp_partition* /mnt/boot --mkdir
 # mount /dev/*home_partition* /mnt/home --mkdir
 # swapon /dev/*swap_partition*
 ```
@@ -40,32 +40,17 @@ Mount the formatted partitions with `# mount`.
 
 # 2. Installation
 
-## 2.1. Updating the mirror list
-
-This step is optional.
-
-First backup your mirror list by copying `/etc/pacman.d/mirrorlist` to `/etc/pacman.d/mirrorlist.bak`.
-```
-# cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
-```
-
-Update the pacman repos and install the 'pacman-contrib' package with `# pacman -Sy pacman-contrib`.
-```
-# rankmirrors -n 6 /etc/pacman.d/mirrorlist.bak > /etc/pacman.d/mirrorlist
-```
-
-## 2.2. Run `pacstrap` to install the system
-
 Install the initial system packages with `# pacstrap`. Package list:
 * amd-ucode
 * base
 * base-devel
 * linux
 * linux-firmware
+* linux-headers
 
 Install command:
 ```
-# pacstrap -K /mnt amd-ucode base base-devel linux linux-firmware
+# pacstrap -K /mnt amd-ucode base base-devel linux linux-firmware linux-headers
 ```
 
 # 3. Configuration
@@ -78,18 +63,19 @@ Generate an fstab file.
 ```
 Check the resulting `/mnt/etc/fstab` file, and edit it in case of errors.
 
-Edit the options for the `/efi` entry: `fmask=0137,dmask=0027`
-Remount `/efi`:
-```
-# umount /efi
-# mount /efi
-```
+Edit the options for the `/boot` entry: `fmask=0137,dmask=0027`
 
 ## 3.2. Chroot
 
 Change root into the new system:
 ```
 # arch-chroot /mnt
+```
+
+Remount `/boot`:
+```
+# umount /boot
+# mount /boot
 ```
 
 ## 3.3. Pacman
@@ -123,11 +109,10 @@ Edit `/etc/locale.gen` and uncomment `en_US.UTF-8 UTF-8`. Generate the locales b
 # locale-gen
 ```
 
-Create the locale.conf file, and set the LANG variable accordingly:
+Run the following command:
 
-`/etc/locale.conf`
 ```
-LANG=en_US.UTF-8
+# echo LANG=en_US.UTF-8 > /etc/locale.conf
 ```
 
 ## 3.5. Time
@@ -153,11 +138,10 @@ Enable the fstrim timer if the system is installed on an **SSD**:
 
 ### 3.7.1. Hostname
 
-Create the hostname file:
+Run the following command:
 
-`/etc/hostname`
 ```
-arch-luka
+# echo arch-luka > /etc/hostname
 ```
 
 ### 3.7.2 NetworkManager
@@ -184,7 +168,7 @@ Set the root password:
 
 Install the boot loader with:
 ```
-# bootctl --esp-path=/efi --boot-path=/boot install
+# bootctl install
 ```
 
 ### 3.9.1 Loader Configuration
@@ -213,7 +197,7 @@ initrd  /initramfs-linux.img
 ```
 Run the following command to make Arch boot from the root volume:
 ```
-# echo "options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/*root_partition*) rw quiet splash" >> /boot/loader/entries/arch.conf
+# echo "options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/*root_partition*) rw" >> /boot/loader/entries/arch.conf
 ```
 
 ## 3.10. Adding user(s)
@@ -222,6 +206,7 @@ Add a new user and change it's password:
 ```
 # useradd -m -G wheel -s /bin/zsh luka
 # passwd luka
+# chfn luka
 ```
 
 Run the following command:
@@ -264,8 +249,6 @@ Install the following packages:
 * nvidia-dkms
 * nvidia-utils
 * lib32-nvidia-utils
-* ~~opencl-nvidia~~
-* ~~lib32-opencl-nvidia~~
 * nvidia-settings
 
 ```
@@ -342,18 +325,11 @@ Enable the `sddm` systemd service:
 $ sudo systemctl enable sddm
 ```
 
-## 6.3. Desktop environment or window manager
+## 6.3. Desktop environment or window manager\
 
-Choose whether you want a desktop environment or tiling window manager.
-
-For the desktop environment, install the `plasma` package group:
+Install the `plasma` package group:
 ```
 $ sudo pacman -S plasma
-```
-
-For the tiling window manager, install the `i3` package group:
-```
-$ sudo pacman -S i3
 ```
 
 ## 6.4. Essential applications
@@ -374,5 +350,5 @@ $ git clone https://aur.archlinux.org/yay.git
 $ cd yay
 $ makepkg -si
 $ cd ..
-$ rm yay
+$ rm -rf yay
 ```
