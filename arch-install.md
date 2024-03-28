@@ -46,11 +46,10 @@ Install the initial system packages with `# pacstrap`. Package list:
 * base-devel
 * linux
 * linux-firmware
-* linux-headers
 
 Install command:
 ```
-# pacstrap -K /mnt amd-ucode base base-devel linux linux-firmware linux-headers
+# pacstrap -K /mnt amd-ucode base base-devel linux linux-firmware
 ```
 
 # 3. Configuration
