@@ -31,7 +31,7 @@ Mount the formatted partitions with `# mount`.
 
 ```
 # mount /dev/*root_partition* /mnt
-# mount /dev/*esp_partition* /mnt/boot --mkdir
+# mount /dev/*esp_partition* /mnt/boot --mkdir -o umask=0077
 # mount /dev/*home_partition* /mnt/home --mkdir
 # swapon /dev/*swap_partition*
 ```
@@ -62,19 +62,11 @@ Generate an fstab file.
 ```
 Check the resulting `/mnt/etc/fstab` file, and edit it in case of errors.
 
-Edit the options for the `/boot` entry: `fmask=0137,dmask=0027`
-
 ## 3.2. Chroot
 
 Change root into the new system:
 ```
 # arch-chroot /mnt
-```
-
-Remount `/boot`:
-```
-# umount /boot
-# mount /boot
 ```
 
 ## 3.3. Pacman
