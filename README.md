@@ -9,7 +9,8 @@ Use `# lsblk` to check drive partitions. Use `# gdisk` to "zap" the drives befor
 ```
 | Type | Hex code | Name | Size | Mount point |
 | --- | --- | --- | --- | --- |
-| EFI system partition | EF00 | esp | 1GiB | /mnt/boot |
+| EFI system partition | EF00 | esp | 512MiB | /mnt/efi |
+| XBOOTLOADER partition | EA00 | boot | 1GiB | /mnt/boot |
 | Linux swap | 8200 | swap | (RAM size) | [SWAP] |
 | Linux filesystem | 8300 | root | 48GiB | /mnt |
 | Linux filesystem | 8300 | home | Rest of the drive | /mnt/home |
@@ -20,6 +21,7 @@ Format the partitions created in the previous step with `# mkfs`.
 
 ```
 # mkfs.fat -F32 /dev/*esp_partition*
+# mkfs.fat -F32 /dev/*boot_partition*
 # mkfs.ext4 /dev/*root_partition*
 # mkfs.ext4 /dev/*home_partition*
 # mkswap /dev/*swap_partition*
@@ -31,7 +33,8 @@ Mount the formatted partitions with `# mount`.
 
 ```
 # mount /dev/*root_partition* /mnt
-# mount /dev/*esp_partition* /mnt/boot --mkdir -o umask=0077
+# mount /dev/*esp_partition* /mnt/efi --mkdir -o umask=0077
+# mount /dev/*boot_partition* /mnt/boot --mkdir
 # mount /dev/*home_partition* /mnt/home --mkdir
 # swapon /dev/*swap_partition*
 ```
@@ -71,15 +74,11 @@ Change root into the new system:
 
 ## 3.3. Pacman
 
-Install some essential packages with pacman:
-```
-# pacman -S bashtop git neofetch neovim pacman-contrib openssh tree zsh
-```
-
 Edit the `/etc/pacman.conf` file and uncomment or add the following lines:
 ```
 ...
 Color
+VerbosePkgLists
 ParallelDownloads=5
 ILoveCandy
 ...
@@ -88,9 +87,9 @@ Include = /etc/pacman.d/mirrorlist
 ...
 ```
 
-Refresh the repos and upgrade the system:
+Refresh the repos and install some packages:
 ```
-# pacman -Syyuu
+# pacman -Sy fastfetch networkmanager
 ```
 
 ## 3.4. Localization
@@ -136,11 +135,6 @@ Run the following command:
 ```
 
 ### 3.7.2 NetworkManager
-
-Install the `networkmanager` package with pacman:
-```
-# pacman -S networkmanager
-```
 
 Enable the `NetworkManager` and `systemd-resolved` services.
 ```
@@ -304,7 +298,7 @@ Install the following packages:
 
 Install the `xorg-server` and `xorg-apps` packages:
 ```
-$ sudo pacman -S xorg-server xorg-xinit xorg-xrandr
+$ sudo pacman -S xorg
 ```
 
 Install the `sddm` package:
@@ -318,19 +312,19 @@ $ sudo systemctl enable sddm
 
 ## 6.3. Desktop environment or window manager\
 
-Install the `plasma` package group:
+Install the `plasma` package group and the `dolphin` package:
 ```
-$ sudo pacman -S plasma
+$ sudo pacman -S plasma dolphin
 ```
 
 ## 6.4. Essential applications
 
 Install the following packages:
 * alacritty (terminal)
-* dolphin (file explorer)
+* lf (TUI file manager)
 * firefox (browser)
 ```
-$ sudo pacman -S alacritty dolphin firefox
+$ sudo pacman -S alacritty firefox
 ```
 
 # 7. Installing an AUR helper
