@@ -219,10 +219,6 @@ Install the following packages:
 * lib32-mesa
 * vulkan-radeon
 * lib32-vulkan-radeon
-* libva-mesa-driver
-* lib32-libva-mesa-driver
-* mesa-vdpau
-* lib32-mesa-vdpau
 
 ## 5.2. NVIDIA driver
 
